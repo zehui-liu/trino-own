@@ -27,6 +27,7 @@ import io.trino.tests.product.launcher.env.common.TestsEnvironment;
 import io.trino.tests.product.launcher.testcontainers.PortBinder;
 import org.testcontainers.containers.startupcheck.IsRunningStartupCheckStrategy;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -56,6 +57,8 @@ import static org.testcontainers.utility.MountableFile.forHostPath;
 public class EnvSinglenodeDeltaLakeOss
         extends EnvironmentProvider
 {
+    private static final File HIVE_JDBC_PROVIDER = new File("testing/trino-product-tests-launcher/target/hive-jdbc-3.1.3-standalone.jar");
+
     private static final int SPARK_THRIFT_PORT = 10213;
 
     private static final String SPARK_CONTAINER_NAME = "spark";
@@ -99,6 +102,9 @@ public class EnvSinglenodeDeltaLakeOss
 
         builder.configureContainer(TESTS, dockerContainer -> {
             dockerContainer.withEnv("S3_BUCKET", S3_BUCKET_NAME)
+                    .withCopyFileToContainer(
+                            forHostPath(HIVE_JDBC_PROVIDER.getAbsolutePath()),
+                            "/docker/hive-jdbc.jar")
                     .withCopyFileToContainer(
                             forHostPath(dockerFiles.getDockerFilesHostPath("conf/tempto/tempto-configuration-for-hive3.yaml")),
                             CONTAINER_TEMPTO_PROFILE_CONFIG);
