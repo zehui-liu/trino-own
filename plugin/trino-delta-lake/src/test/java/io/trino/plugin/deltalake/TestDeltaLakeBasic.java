@@ -46,7 +46,6 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -106,15 +105,10 @@ public class TestDeltaLakeBasic
     public void registerTables()
     {
         for (ResourceTable table : Iterables.concat(PERSON_TABLES, OTHER_TABLES)) {
-            String dataPath = getTableLocation(table.resourcePath()).toExternalForm();
+            String dataPath = getClass().getClassLoader().getResource(table.resourcePath()).toExternalForm();
             getQueryRunner().execute(
                     format("CALL system.register_table('%s', '%s', '%s')", getSession().getSchema().orElseThrow(), table.tableName(), dataPath));
         }
-    }
-
-    private URL getTableLocation(String resourcePath)
-    {
-        return getClass().getClassLoader().getResource(resourcePath);
     }
 
     @DataProvider
@@ -656,7 +650,7 @@ public class TestDeltaLakeBasic
         // create a bad_person table which is based on person table in temporary location
         String tableName = "bad_person_" + randomNameSuffix();
         Path tableLocation = Files.createTempFile(tableName, null);
-        copyDirectoryContents(Path.of(getTableLocation("databricks73/person").toURI()), tableLocation);
+        copyDirectoryContents(Path.of(getClass().getClassLoader().getResource("databricks73/person").toURI()), tableLocation);
         getQueryRunner().execute(
                 format("CALL system.register_table('%s', '%s', '%s')", getSession().getSchema().orElseThrow(), tableName, tableLocation));
         testCorruptedTableLocation(tableName, tableLocation, false);
