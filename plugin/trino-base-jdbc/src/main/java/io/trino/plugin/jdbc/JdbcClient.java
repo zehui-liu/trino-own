@@ -237,4 +237,9 @@ public interface JdbcClient
     void truncateTable(ConnectorSession session, JdbcTableHandle handle);
 
     OptionalInt getMaxWriteParallelism(ConnectorSession session);
+
+    default OptionalInt getMaxColumnNameLength(ConnectorSession session)
+    {
+        return OptionalInt.empty();
+    }
 }
