@@ -102,6 +102,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.function.BiFunction;
 
@@ -515,6 +516,22 @@ public class RedshiftClient
         // Redshift truncates table name to 127 chars silently
         if (columnName.length() > databaseMetadata.getMaxColumnNameLength()) {
             throw new TrinoException(NOT_SUPPORTED, "Column name must be shorter than or equal to '%d' characters but got '%d'".formatted(databaseMetadata.getMaxColumnNameLength(), columnName.length()));
+        }
+    }
+
+    @Override
+    public OptionalInt getMaxColumnNameLength(ConnectorSession session)
+    {
+        try (Connection connection = connectionFactory.openConnection(session)) {
+            int maxColumnNameLength = connection.getMetaData().getMaxColumnNameLength();
+            // According to JavaDoc of DatabaseMetaData#getMaxColumnNameLength a value of 0 signifies that the limit is unknown
+            if (maxColumnNameLength == 0) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(connection.getMetaData().getMaxColumnNameLength());
+        }
+        catch (SQLException e) {
+            throw new TrinoException(JDBC_ERROR, e);
         }
     }
 

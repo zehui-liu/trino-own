@@ -13,27 +13,46 @@
  */
 package io.trino.plugin.jdbc;
 
+import java.util.OptionalInt;
+
 import static com.google.common.base.Splitter.fixedLength;
 import static com.google.common.base.Verify.verify;
 
 public class SyntheticColumnHandleBuilder
 {
-    public static final int DEFAULT_COLUMN_ALIAS_LENGTH = 30;
+    private static final String SEPARATOR = "_";
+    private static final int SEPARATOR_LENGTH = SEPARATOR.length();
 
-    public JdbcColumnHandle get(JdbcColumnHandle column, int nextSyntheticColumnId)
+    public JdbcColumnHandle get(JdbcColumnHandle column, int nextSyntheticColumnId, OptionalInt optionalMaxColumnNameLength)
     {
-        verify(nextSyntheticColumnId >= 0, "nextSyntheticColumnId rolled over and is not monotonically increasing any more");
+        if (optionalMaxColumnNameLength.isEmpty()) {
+            return JdbcColumnHandle.builderFrom(column)
+                    .setColumnName(column.getColumnName() + SEPARATOR + nextSyntheticColumnId)
+                    .build();
+        }
 
-        int sequentialNumberLength = String.valueOf(nextSyntheticColumnId).length();
-        int originalColumnNameLength = DEFAULT_COLUMN_ALIAS_LENGTH - sequentialNumberLength - "_".length();
+        int maxColumnNameLength = optionalMaxColumnNameLength.getAsInt();
+        int nextSyntheticColumnIdLength = String.valueOf(nextSyntheticColumnId).length();
+        verify(maxColumnNameLength >= nextSyntheticColumnIdLength, "Maximum allowed column name length is %s but next synthetic id has length %s", maxColumnNameLength, nextSyntheticColumnIdLength);
 
-        String columnNameTruncated = fixedLength(originalColumnNameLength)
-                .split(column.getColumnName())
-                .iterator()
-                .next();
-        String columnName = columnNameTruncated + "_" + nextSyntheticColumnId;
+        if (nextSyntheticColumnIdLength == maxColumnNameLength) {
+            return JdbcColumnHandle.builderFrom(column)
+                    .setColumnName(String.valueOf(nextSyntheticColumnId))
+                    .build();
+        }
+
+        if (nextSyntheticColumnIdLength + SEPARATOR_LENGTH == maxColumnNameLength) {
+            return JdbcColumnHandle.builderFrom(column)
+                    .setColumnName(SEPARATOR + nextSyntheticColumnId)
+                    .build();
+        }
+
+        String truncatedColumnName = fixedLength(maxColumnNameLength - SEPARATOR_LENGTH - nextSyntheticColumnIdLength)
+                    .split(column.getColumnName())
+                    .iterator()
+                    .next();
         return JdbcColumnHandle.builderFrom(column)
-                .setColumnName(columnName)
+                .setColumnName(truncatedColumnName + SEPARATOR + nextSyntheticColumnId)
                 .build();
     }
 }

@@ -14,12 +14,12 @@
 package io.trino.plugin.jdbc;
 
 import com.google.common.base.VerifyException;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.util.OptionalInt;
 
 import static io.trino.plugin.jdbc.TestingJdbcTypeHandle.JDBC_VARCHAR;
 import static io.trino.spi.type.VarcharType.VARCHAR;
-import static java.lang.Integer.MAX_VALUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,36 +27,66 @@ public class TestSyntheticColumnHandleBuilder
 {
     private final SyntheticColumnHandleBuilder syntheticColumnHandleBuilder = new SyntheticColumnHandleBuilder();
 
-    @DataProvider(name = "columns")
-    public static Object[][] testData()
+    @Test
+    public void testShortColumnName()
     {
-        return new Object[][] {
-                {"column_0", 999, "column_0_999"},
-                {"column_with_over_twenty_characters", 100, "column_with_over_twenty_ch_100"},
-                {"column_with_over_twenty_characters", MAX_VALUE, "column_with_over_tw_2147483647"}
-        };
-    }
+        int maximumLength = 30;
+        String columnName = "a".repeat(maximumLength - 4);
 
-    @Test(dataProvider = "columns")
-    public void testColumnAliasTruncation(String columnName, int nextSynthenticId, String expectedSyntheticColumnName)
-    {
         JdbcColumnHandle column = getDefaultColumnHandleBuilder()
                 .setColumnName(columnName)
                 .build();
 
-        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, nextSynthenticId);
-
-        assertThat(result.getColumnName()).isEqualTo(expectedSyntheticColumnName);
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 123, OptionalInt.of(maximumLength));
+        assertThat(result.getColumnName()).isEqualTo(columnName + "_123");
     }
 
     @Test
-    public void testNegativeSyntheticId()
+    public void testColumnNameExceedsLength()
     {
+        int maximumLength = 30;
+        String columnName = "a".repeat(maximumLength);
+
         JdbcColumnHandle column = getDefaultColumnHandleBuilder()
-                .setColumnName("column_0")
+                .setColumnName(columnName)
                 .build();
 
-        assertThatThrownBy(() -> syntheticColumnHandleBuilder.get(column, -2147483648)).isInstanceOf(VerifyException.class);
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 123, OptionalInt.of(maximumLength));
+        assertThat(result.getColumnName()).isEqualTo("a".repeat(maximumLength - 4) + "_123");
+    }
+
+    @Test
+    public void testSyntheticIdExceedsLength()
+    {
+        JdbcColumnHandle column = getDefaultColumnHandleBuilder()
+                .setColumnName("a")
+                .build();
+
+        assertThatThrownBy(() -> syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(3)))
+                .isInstanceOf(VerifyException.class)
+                .hasMessage("Maximum allowed column name length is 3 but next synthetic id has length 4");
+    }
+
+    @Test
+    public void testSyntheticIdEqualsLength()
+    {
+        JdbcColumnHandle column = getDefaultColumnHandleBuilder()
+                .setColumnName("a")
+                .build();
+
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(4));
+        assertThat(result.getColumnName()).isEqualTo("1234");
+    }
+
+    @Test
+    public void testSyntheticIdWithSeparatorEqualsLength()
+    {
+        JdbcColumnHandle column = getDefaultColumnHandleBuilder()
+                .setColumnName("a")
+                .build();
+
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(5));
+        assertThat(result.getColumnName()).isEqualTo("_1234");
     }
 
     private static JdbcColumnHandle.Builder getDefaultColumnHandleBuilder()

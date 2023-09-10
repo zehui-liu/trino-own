@@ -130,6 +130,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -1074,6 +1075,22 @@ public class PostgreSqlClient
         // PostgreSQL driver caches the max column name length in a DatabaseMetaData object. The cost to call this method per column is low.
         if (columnName.length() > databaseMetadata.getMaxColumnNameLength()) {
             throw new TrinoException(NOT_SUPPORTED, format("Column name must be shorter than or equal to '%s' characters but got '%s': '%s'", databaseMetadata.getMaxColumnNameLength(), columnName.length(), columnName));
+        }
+    }
+
+    @Override
+    public OptionalInt getMaxColumnNameLength(ConnectorSession session)
+    {
+        try (Connection connection = connectionFactory.openConnection(session)) {
+            int maxColumnNameLength = connection.getMetaData().getMaxColumnNameLength();
+            // According to JavaDoc of DatabaseMetaData#getMaxColumnNameLength a value of 0 signifies that the limit is unknown
+            if (maxColumnNameLength == 0) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(connection.getMetaData().getMaxColumnNameLength());
+        }
+        catch (SQLException e) {
+            throw new TrinoException(JDBC_ERROR, e);
         }
     }
 
