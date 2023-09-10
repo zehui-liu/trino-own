@@ -391,6 +391,7 @@ public class DefaultJdbcMetadata
                 return Optional.empty();
             }
 
+            // the new column can be max len(SYNTHETIC_COLUMN_NAME_PREFIX) + len(Integer.MAX_VALUE) = 9 + 10 = 19 characters which is small enough to be supported by all databases
             String columnName = SYNTHETIC_COLUMN_NAME_PREFIX + nextSyntheticColumnId;
             nextSyntheticColumnId++;
             JdbcColumnHandle newColumn = JdbcColumnHandle.builder()
