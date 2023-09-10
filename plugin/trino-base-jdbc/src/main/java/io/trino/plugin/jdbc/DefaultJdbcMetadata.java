@@ -115,6 +115,11 @@ public class DefaultJdbcMetadata
 
     private final SyntheticColumnHandleBuilder syntheticColumnBuilder;
 
+    public DefaultJdbcMetadata(JdbcClient jdbcClient, boolean precalculateStatisticsForPushdown, Set<JdbcQueryEventListener> jdbcQueryEventListeners)
+    {
+        this(jdbcClient, precalculateStatisticsForPushdown, jdbcQueryEventListeners, new SyntheticColumnHandleBuilder());
+    }
+
     public DefaultJdbcMetadata(JdbcClient jdbcClient,
             boolean precalculateStatisticsForPushdown,
             Set<JdbcQueryEventListener> jdbcQueryEventListeners,
