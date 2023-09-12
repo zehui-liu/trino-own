@@ -466,14 +466,14 @@ public class DefaultJdbcMetadata
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newLeftColumnsBuilder = ImmutableMap.builder();
         OptionalInt maxColumnNameLength = jdbcClient.getMaxColumnNameLength(session);
         for (JdbcColumnHandle column : jdbcClient.getColumns(session, leftHandle)) {
-            newLeftColumnsBuilder.put(column, syntheticColumnBuilder.get(column, nextSyntheticColumnId, maxColumnNameLength));
+            newLeftColumnsBuilder.put(column, syntheticColumnBuilder.getForColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
         Map<JdbcColumnHandle, JdbcColumnHandle> newLeftColumns = newLeftColumnsBuilder.buildOrThrow();
 
         ImmutableMap.Builder<JdbcColumnHandle, JdbcColumnHandle> newRightColumnsBuilder = ImmutableMap.builder();
         for (JdbcColumnHandle column : jdbcClient.getColumns(session, rightHandle)) {
-            newRightColumnsBuilder.put(column, syntheticColumnBuilder.get(column, nextSyntheticColumnId, maxColumnNameLength));
+            newRightColumnsBuilder.put(column, syntheticColumnBuilder.getForColumn(column, nextSyntheticColumnId, maxColumnNameLength));
             nextSyntheticColumnId++;
         }
         Map<JdbcColumnHandle, JdbcColumnHandle> newRightColumns = newRightColumnsBuilder.buildOrThrow();

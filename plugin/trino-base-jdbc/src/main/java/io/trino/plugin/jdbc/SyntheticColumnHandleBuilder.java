@@ -23,7 +23,7 @@ public class SyntheticColumnHandleBuilder
     private static final String SEPARATOR = "_";
     private static final int SEPARATOR_LENGTH = SEPARATOR.length();
 
-    public JdbcColumnHandle get(JdbcColumnHandle column, int nextSyntheticColumnId, OptionalInt optionalMaxColumnNameLength)
+    public JdbcColumnHandle getForColumn(JdbcColumnHandle column, int nextSyntheticColumnId, OptionalInt optionalMaxColumnNameLength)
     {
         if (optionalMaxColumnNameLength.isEmpty()) {
             return JdbcColumnHandle.builderFrom(column)

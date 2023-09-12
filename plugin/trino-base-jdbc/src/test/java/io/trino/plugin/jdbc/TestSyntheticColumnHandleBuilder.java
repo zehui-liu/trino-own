@@ -37,7 +37,7 @@ public class TestSyntheticColumnHandleBuilder
                 .setColumnName(columnName)
                 .build();
 
-        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 123, OptionalInt.of(maximumLength));
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.getForColumn(column, 123, OptionalInt.of(maximumLength));
         assertThat(result.getColumnName()).isEqualTo(columnName + "_123");
     }
 
@@ -51,7 +51,7 @@ public class TestSyntheticColumnHandleBuilder
                 .setColumnName(columnName)
                 .build();
 
-        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 123, OptionalInt.of(maximumLength));
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.getForColumn(column, 123, OptionalInt.of(maximumLength));
         assertThat(result.getColumnName()).isEqualTo("a".repeat(maximumLength - 4) + "_123");
     }
 
@@ -62,7 +62,7 @@ public class TestSyntheticColumnHandleBuilder
                 .setColumnName("a")
                 .build();
 
-        assertThatThrownBy(() -> syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(3)))
+        assertThatThrownBy(() -> syntheticColumnHandleBuilder.getForColumn(column, 1234, OptionalInt.of(3)))
                 .isInstanceOf(VerifyException.class)
                 .hasMessage("Maximum allowed column name length is 3 but next synthetic id has length 4");
     }
@@ -74,7 +74,7 @@ public class TestSyntheticColumnHandleBuilder
                 .setColumnName("a")
                 .build();
 
-        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(4));
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.getForColumn(column, 1234, OptionalInt.of(4));
         assertThat(result.getColumnName()).isEqualTo("1234");
     }
 
@@ -85,7 +85,7 @@ public class TestSyntheticColumnHandleBuilder
                 .setColumnName("a")
                 .build();
 
-        JdbcColumnHandle result = syntheticColumnHandleBuilder.get(column, 1234, OptionalInt.of(5));
+        JdbcColumnHandle result = syntheticColumnHandleBuilder.getForColumn(column, 1234, OptionalInt.of(5));
         assertThat(result.getColumnName()).isEqualTo("_1234");
     }
 
