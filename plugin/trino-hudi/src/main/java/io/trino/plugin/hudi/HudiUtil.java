@@ -33,7 +33,6 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hudi.common.fs.FSUtils;
 import org.apache.hudi.common.model.HoodieBaseFile;
 import org.apache.hudi.common.model.HoodieFileFormat;
-import org.apache.hudi.common.model.HoodieTableType;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
 import org.apache.hudi.hadoop.HoodieParquetInputFormat;
 import org.apache.hudi.hadoop.utils.HoodieInputFormatUtils;
@@ -45,10 +44,9 @@ import java.util.Map;
 import static io.trino.plugin.hive.HiveErrorCode.HIVE_INVALID_METADATA;
 import static io.trino.plugin.hive.util.HiveUtil.checkCondition;
 import static io.trino.plugin.hive.util.HiveUtil.parsePartitionValue;
-import static io.trino.plugin.hudi.HudiErrorCode.*;
+import static io.trino.plugin.hudi.HudiErrorCode.HUDI_CANNOT_OPEN_SPLIT;
+import static io.trino.plugin.hudi.HudiErrorCode.HUDI_UNSUPPORTED_FILE_FORMAT;
 import static java.util.stream.Collectors.toList;
-import static org.apache.hudi.common.model.HoodieTableType.COPY_ON_WRITE;
-import static org.apache.hudi.common.model.HoodieTableType.MERGE_ON_READ;
 
 public final class HudiUtil
 {
@@ -172,26 +170,5 @@ public final class HudiUtil
         catch (IOException e) {
             throw new TrinoException(HUDI_CANNOT_OPEN_SPLIT, "Error getting file status of " + baseFile.getPath(), e);
         }
-    }
-
-    public static HoodieTableType getTableType(String inputFormat)
-    {
-        switch (inputFormat) {
-            case "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat":
-            case "org.apache.hudi.hadoop.HoodieParquetInputFormat":
-            case "com.uber.hoodie.hadoop.HoodieInputFormat":
-                return COPY_ON_WRITE;
-            case "org.apache.hudi.hadoop.realtime.HoodieParquetRealtimeInputFormat":
-            case "com.uber.hoodie.hadoop.realtime.HoodieRealtimeInputFormat":
-                return MERGE_ON_READ;
-            default:
-                throw new TrinoException(HUDI_UNKNOWN_TABLE_TYPE, "Unknown table type for input format: " + inputFormat);
-        }
-    }
-
-    public static HudiFile getHudiBaseFile(HudiSplit hudiSplit)
-    {
-        // use first log file as base file for MOR table if it hasn't base file
-        return hudiSplit.getBaseFile().orElse(hudiSplit.getLogFiles().get(0));
     }
 }

@@ -25,12 +25,10 @@ import io.trino.plugin.hudi.partition.HudiPartitionInfo;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.TableNotFoundException;
 import io.trino.spi.predicate.TupleDomain;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hudi.common.config.HoodieMetadataConfig;
 import org.apache.hudi.common.engine.HoodieEngineContext;
-import org.apache.hudi.common.model.FileSlice;
 import org.apache.hudi.common.table.HoodieTableMetaClient;
-import org.apache.hudi.common.table.timeline.HoodieInstant;
-import org.apache.hudi.common.table.timeline.HoodieTimeline;
 import org.apache.hudi.common.table.view.FileSystemViewManager;
 import org.apache.hudi.common.table.view.HoodieTableFileSystemView;
 
@@ -40,6 +38,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.plugin.hudi.HudiUtil.getFileStatus;
+
 public class HudiReadOptimizedDirectoryLister
         implements HudiDirectoryLister
 {
@@ -48,7 +49,6 @@ public class HudiReadOptimizedDirectoryLister
     private final Table hiveTable;
     private final SchemaTableName tableName;
     private final List<HiveColumnHandle> partitionColumnHandles;
-    private final HoodieTableMetaClient tableMetaClient;
     private final HoodieTableFileSystemView fileSystemView;
     private final TupleDomain<String> partitionKeysFilter;
     private final List<Column> partitionColumns;
@@ -69,7 +69,6 @@ public class HudiReadOptimizedDirectoryLister
         this.hiveMetastore = hiveMetastore;
         this.hiveTable = hiveTable;
         this.partitionColumnHandles = partitionColumnHandles;
-        this.tableMetaClient = metaClient;
         this.fileSystemView = FileSystemViewManager.createInMemoryFileSystemView(engineContext, metaClient, metadataConfig);
         this.partitionKeysFilter = MetastoreUtil.computePartitionKeyFilter(partitionColumnHandles, tableHandle.getPartitionPredicates());
         this.partitionColumns = hiveTable.getPartitionColumns();
@@ -100,17 +99,11 @@ public class HudiReadOptimizedDirectoryLister
     }
 
     @Override
-    public String getMaxCommitTime()
+    public List<FileStatus> listStatus(HudiPartitionInfo partitionInfo)
     {
-        HoodieTimeline timeline = tableMetaClient.getActiveTimeline().getCommitsTimeline().filterCompletedInstants();
-        return timeline.lastInstant().map(HoodieInstant::getTimestamp).orElse(null);
-    }
-
-    @Override
-    public List<FileSlice> listFileSlice(HudiPartitionInfo partitionInfo, String timeInstant)
-    {
-        return fileSystemView.getLatestFileSlicesBeforeOrOn(partitionInfo.getRelativePartitionPath(), timeInstant, false)
-                .collect(Collectors.toList());
+        return fileSystemView.getLatestBaseFiles(partitionInfo.getRelativePartitionPath())
+                .map(baseFile -> getFileStatus(baseFile))
+                .collect(toImmutableList());
     }
 
     private List<String> getPartitionNamesFromHiveMetastore(TupleDomain<String> partitionKeysFilter)

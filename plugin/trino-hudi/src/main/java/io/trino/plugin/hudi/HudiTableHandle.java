@@ -21,8 +21,6 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 import org.apache.hudi.common.model.HoodieTableType;
 
-import java.util.Properties;
-
 import static io.trino.spi.connector.SchemaTableName.schemaTableName;
 import static java.util.Objects.requireNonNull;
 
@@ -32,7 +30,6 @@ public class HudiTableHandle
     private final String schemaName;
     private final String tableName;
     private final String basePath;
-    private final Properties schema;
     private final HoodieTableType tableType;
     private final TupleDomain<HiveColumnHandle> partitionPredicates;
     private final TupleDomain<HiveColumnHandle> regularPredicates;
@@ -42,7 +39,6 @@ public class HudiTableHandle
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("basePath") String basePath,
-            @JsonProperty("properties") Properties schema,
             @JsonProperty("tableType") HoodieTableType tableType,
             @JsonProperty("partitionPredicates") TupleDomain<HiveColumnHandle> partitionPredicates,
             @JsonProperty("regularPredicates") TupleDomain<HiveColumnHandle> regularPredicates)
@@ -50,7 +46,6 @@ public class HudiTableHandle
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
         this.basePath = requireNonNull(basePath, "basePath is null");
-        this.schema = requireNonNull(schema, "schema is null");
         this.tableType = requireNonNull(tableType, "tableType is null");
         this.partitionPredicates = requireNonNull(partitionPredicates, "partitionPredicates is null");
         this.regularPredicates = requireNonNull(regularPredicates, "regularPredicates is null");
@@ -72,12 +67,6 @@ public class HudiTableHandle
     public String getBasePath()
     {
         return basePath;
-    }
-
-    @JsonProperty
-    public Properties getSchema()
-    {
-        return schema;
     }
 
     @JsonProperty
@@ -111,7 +100,6 @@ public class HudiTableHandle
                 schemaName,
                 tableName,
                 basePath,
-                schema,
                 tableType,
                 partitionPredicates.intersect(partitionTupleDomain),
                 regularPredicates.intersect(regularTupleDomain));

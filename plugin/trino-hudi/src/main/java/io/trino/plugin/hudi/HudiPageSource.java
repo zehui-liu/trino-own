@@ -18,6 +18,7 @@ import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.RunLengthEncodedBlock;
 import io.trino.spi.connector.ConnectorPageSource;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,7 +51,7 @@ public class HudiPageSource
             List<HiveColumnHandle> columnHandles,
             Map<String, Block> partitionBlocks,
             ConnectorPageSource dataPageSource,
-            String path,
+            Path path,
             long fileSize,
             long fileModifiedTime)
     {
@@ -75,7 +76,7 @@ public class HudiPageSource
                 delegateIndexes[outputIndex] = -1;
             }
             else if (column.getName().equals(PATH_COLUMN_NAME)) {
-                prefilledBlocks[outputIndex] = nativeValueToBlock(PATH_TYPE, utf8Slice(path));
+                prefilledBlocks[outputIndex] = nativeValueToBlock(PATH_TYPE, utf8Slice(path.toString()));
                 delegateIndexes[outputIndex] = -1;
             }
             else if (column.getName().equals(FILE_SIZE_COLUMN_NAME)) {
