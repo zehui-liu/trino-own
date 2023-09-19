@@ -37,16 +37,12 @@ import org.apache.hadoop.hive.common.type.HiveVarchar;
 import org.apache.hadoop.hive.common.type.Timestamp;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.io.HiveCharWritable;
-import org.apache.hadoop.hive.serde2.io.HiveVarcharWritable;
+import org.apache.hadoop.hive.serde2.io.*;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.io.BinaryComparable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapred.RecordReader;
 
 import java.io.IOException;
@@ -284,6 +280,11 @@ public class GenericHiveRecordCursor<K, V extends Writable>
 
         Object fieldData = rowInspector.getStructFieldData(rowData, structFields[column]);
 
+        if (fieldData instanceof DateWritable) {
+            int days = ((DateWritable) fieldData).getDays();
+            fieldData = new DateWritableV2(days);
+        }
+
         if (fieldData == null) {
             nulls[column] = true;
         }
@@ -489,6 +490,12 @@ public class GenericHiveRecordCursor<K, V extends Writable>
                 objects[column] = getBlockObject(type, fieldData, fieldInspectors[column]);
             }
             else if (type instanceof TimestampType) {
+                if (fieldData instanceof org.apache.hadoop.io.LongWritable){
+                    long l = ((LongWritable) fieldData).get();
+                    Timestamp timestamp = Timestamp.ofEpochMilli(l / 1000);
+
+                    fieldData = new TimestampWritableV2(timestamp);
+                }
                 Timestamp timestamp = (Timestamp) ((PrimitiveObjectInspector) fieldInspectors[column]).getPrimitiveJavaObject(fieldData);
                 objects[column] = longTimestamp(timestamp, column);
             }
